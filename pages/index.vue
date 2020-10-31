@@ -1,8 +1,18 @@
 <template>
   <div class="md-layout md-alignment-center">
-    <div class="md-layout-item md-size-95">
+    <!-- Navigation -->
+    <md-toolbar elevation="1" class="fixed-toolbar">
+      <md-button class="md-icon-button"><md-icon>menu</md-icon></md-button>
+      <nuxt-link class="md-primary md-title" to="/">World News</nuxt-link>
+      <div class="md-toolbar-section-end">
+        <md-button to="/login">Login</md-button>
+        <md-button to="/register">Register</md-button>
+      </div>
+    </md-toolbar>
+    <!-- App Content -->
+    <div class="md-layout-item md-size-95" style="margin-top: 4em;">
       <md-content class="md-layout md-gutter" style="background-color: #007998; padding: 1em;">
-        <div v-for="headline in headlines" :key="headline.id" class="md-layout-item md-xsmall-size-100 md-small-size-50 md-medium-size-33 md-large-size-25">
+        <div v-for="headline in headlines" :key="headline.id" class="md-layout-item md-xsmall-size-100 md-small-size-50 md-medium-size-33 md-large-size-25 md-xlarge-size-25">
           <md-card style="margin-top: 1em;" md-with-hover >
             <md-ripple>
             <md-card-media md-ratio="16:9">
@@ -44,10 +54,12 @@
 
 <script>
   export default {
-    async asyncData({ app }) {
-      const topHeadlines = await app.$axios.$get('/api/top-headlines?country=us')
-      return {
-        headlines: topHeadlines.articles
+    async fetch({ store }) {
+      await store.dispatch('loadHeadlines', '/api/top-headlines?country=us')
+    },
+    computed: {
+      headlines() {
+        return this.$store.getters.headlines
       }
     }
   }
@@ -56,5 +68,11 @@
 <style scoped>
   .small-icon {
     font-size: 18px !important;
+  }
+
+  .fixed-toolbar {
+    position: fixed;
+    top: 0;
+    z-index: 5;
   }
 </style>
