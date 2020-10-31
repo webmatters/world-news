@@ -2,18 +2,62 @@
   <div class="md-layout md-alignment-center">
     <!-- Navigation -->
     <md-toolbar elevation="1" class="fixed-toolbar">
-      <md-button class="md-icon-button"><md-icon>menu</md-icon></md-button>
-      <nuxt-link class="md-primary md-title" to="/">World News</nuxt-link>
+      <md-button @click="showLeftPanel=true" class="md-icon-button"><md-icon>menu</md-icon></md-button>
+      <nuxt-link class="md-primary md-title" to="/" style="text-decoration: none;">World News</nuxt-link>
       <div class="md-toolbar-section-end">
-        <md-button to="/login">Login</md-button>
-        <md-button to="/register">Register</md-button>
+        <template v-if="isAuthenticated">
+          <md-button>
+            <md-avatar><img :src="user.avatar" :alt="user.email"></md-avatar>
+            {{ user.email }}
+          </md-button>
+          <md-button>Logout</md-button>
+        </template>
+        <template v-else>
+          <md-button to="/login">Login</md-button>
+          <md-button to="/register">Register</md-button>
+        </template>
+        <md-button @click="showRightPanel=true" class="md-accent">Categories</md-button>
       </div>
     </md-toolbar>
+
+    <!-- News Categories (Right drawer) -->
+    <md-drawer class="md-right" md-fixed :md-active.sync="showRightPanel">
+      <md-toolbar :md-elevation="1">
+        <span class="md-title">News Categories</span>
+      </md-toolbar>
+      <md-progress-bar v-if="loading" md-mode="indeterminate"></md-progress-bar>
+      <md-list>
+        <md-subheader class="md-primary">Categories</md-subheader>
+        <md-list-item v-for="(newsCategory, i) in newsCategories" :key="i" @click="loadCategory(newsCategory.path)">
+          <md-icon :class="newsCategory.path===category ? 'md-primary' : ''">{{ newsCategory.icon }}</md-icon>
+          <span class="md-list-item">{{ newsCategory.name }}</span>
+        </md-list-item>
+      </md-list>
+    </md-drawer>
+
+    <!-- Personal News Feed (Left drawer) -->
+    <md-drawer md-fixed :md-active.sync="showLeftPanel">
+      <md-toolbar md-elevation="1">
+        <span class="md-title">Personal Feed</span>
+      </md-toolbar>
+      <md-progress-bar v-if="loading" md-mode="indeterminate"></md-progress-bar>
+      <md-field>
+        <label for="country">Country</label>
+        <md-select @input="changeCountry" :value="country" name="country" id="country">
+          <md-option value="us">United States</md-option>
+          <md-option value="ca">Canada</md-option>
+          <md-option value="de">Germany</md-option>
+          <md-option value="ru">Russa</md-option>
+        </md-select>
+      </md-field>
+    </md-drawer>
+
     <!-- App Content -->
     <div class="md-layout-item md-size-95" style="margin-top: 4em;">
       <md-content class="md-layout md-gutter" style="background-color: #007998; padding: 1em;">
-        <div v-for="headline in headlines" :key="headline.id" class="md-layout-item md-xsmall-size-100 md-small-size-50 md-medium-size-33 md-large-size-25 md-xlarge-size-25">
-          <md-card style="margin-top: 1em;" md-with-hover >
+        <div v-for="headline in headlines" :key="headline.id"
+          class="md-layout-item md-xsmall-size-100 md-small-size-50 md-medium-size-33 md-large-size-25 md-xlarge-size-25">
+          <md-card style="margin-top: 1em;" md-with-hover>
             <md-ripple>
             <md-card-media md-ratio="16:9">
               <img :src="headline.urlToImage" :alt="headline.title">
@@ -36,14 +80,14 @@
               </div>
             </md-card-header>
             <md-card-content>{{headline.description}}</md-card-content>
-            <mc-card-actions>
+            <md-card-actions>
               <md-button class="md-icon-button">
                 <md-icon>bookmark</md-icon>
               </md-button>
               <md-button class="md-icon-button">
                 <md-icon>message</md-icon>
               </md-button>
-            </mc-card-actions>
+            </md-card-actions>
             </md-ripple>
           </md-card>
         </div>
@@ -54,14 +98,58 @@
 
 <script>
   export default {
+    data() {
+      return {
+        showRightPanel: false,
+        showLeftPanel: false,
+        newsCategories: [
+          {name: 'Top Headlines', path: '', icon: 'today' },
+          {name: 'Technology', path: 'technology', icon: 'keyboard' },
+          {name: 'Business', path: 'business', icon: 'business_center' },
+          {name: 'Entertainment', path: 'entertainment', icon: 'weekend' },
+          {name: 'Health', path: 'health', icon: 'fastfood' },
+          {name: 'Science', path: 'science', icon: 'fingerprint' },
+          {name: 'Sports', path: 'sports', icon: 'golf_course' },
+        ]
+      }
+    },
     async fetch({ store }) {
-      await store.dispatch('loadHeadlines', '/api/top-headlines?country=us')
+      await store.dispatch('loadHeadlines', `/api/top-headlines?country=${store.state.country}&category=${store.state.category}`)
+    },
+    watch: {
+      async country() {
+        await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=${this.country}&category=${this.category}`)
+      }
     },
     computed: {
       headlines() {
         return this.$store.getters.headlines
+      },
+      category() {
+        return this.$store.getters.category
+      },
+      loading() {
+        return this.$store.getters.loading
+      },
+      country() {
+        return this.$store.getters.country
+      },
+      isAuthenticated() {
+        return this.$store.getters.isAuthenticated
+      },
+      user() {
+        return this.$store.getters.user
       }
-    }
+    },
+    methods: {
+      async loadCategory(category) {
+        this.$store.dispatch('changeCategory', category)
+        await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=${this.country}&category=${this.category}`)
+      },
+      changeCountry(country) {
+        this.$store.dispatch('changeCountry', country)
+      }
+    },
   }
 </script>
 

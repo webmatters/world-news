@@ -11,17 +11,17 @@ export default {
       {
         hid: 'description',
         name: 'description',
-        content: process.env.npm_package_description || ''
-      }
+        content: process.env.npm_package_description || '',
+      },
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
       {
         rel: 'stylesheet',
         href:
-          '//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons'
-      }
-    ]
+          '//fonts.googleapis.com/css?family=Roboto:400,500,700,400italic|Material+Icons',
+      },
+    ],
   },
   /*
    ** Customize the progress-bar color
@@ -33,12 +33,12 @@ export default {
   css: [
     {
       src: 'vue-material/dist/vue-material.min.css',
-      lang: 'css'
+      lang: 'css',
     },
     {
       src: '~/assets/theme.scss',
-      lang: 'scss'
-    }
+      lang: 'scss',
+    },
   ],
   /*
    ** Plugins to load before mounting the App
@@ -54,7 +54,7 @@ export default {
   modules: [
     // Doc: https://axios.nuxtjs.org/usage
     '@nuxtjs/axios',
-    '@nuxtjs/proxy'
+    '@nuxtjs/proxy',
   ],
   /*
    ** Axios module configuration
@@ -62,16 +62,21 @@ export default {
    */
   axios: {
     credentials: true,
-    proxy: true
+    proxy: true,
   },
   proxy: {
     '/api/': {
       target: 'https://newsapi.org/v2/',
-      pathRewrite: { '^/api/': '' }
-    }
+      pathRewrite: { '^/api/': '' },
+    },
+    '/register/': {
+      target:
+        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBkDzz3ir6s2RyWjxSzoz_uiEHm-q2f63k',
+      pathRewrite: { '^/register/': '' },
+    },
   },
   env: {
-    NEWS_API_KEY: '337265c388cf4e4283183bdcc0e1faa1'
+    NEWS_API_KEY: '337265c388cf4e4283183bdcc0e1faa1',
   },
   /*
    ** Build configuration
@@ -80,6 +85,6 @@ export default {
     /*
      ** You can extend webpack config here
      */
-    extend(config, ctx) {}
-  }
+    extend(config, ctx) {},
+  },
 }
