@@ -1,6 +1,9 @@
 import Vuex from 'vuex'
 import md5 from 'md5'
 
+import db from '~/plugins/firestore'
+import { saveUserData, clearUserData } from '~/utils'
+
 const createStore = () => {
   return new Vuex.Store({
     state: {
@@ -30,6 +33,12 @@ const createStore = () => {
       SET_USER(state, user) {
         state.user = user
       },
+      CLEAR_TOKEN(state) {
+        state.token = ''
+      },
+      CLEAR_USER(state) {
+        state.user = null
+      },
     },
     actions: {
       async loadHeadlines({ commit }, apiUrl) {
@@ -48,20 +57,46 @@ const createStore = () => {
         try {
           commit('SET_LOADING', true)
           const authUserData = await this.$axios.$post(
-            '/register/',
-            userPayload
+            `/${userPayload.action}/`,
+            {
+              email: userPayload.email,
+              password: userPayload.password,
+              returnSecureToken: userPayload.returnSecureToken,
+            }
           )
-          const avatar = `http://gravatar.com/avatar/${md5(
-            authUserData.email
-          )}?d=identicon`
-          const user = { email: authUserData.email, avatar }
+          let user
+          if (userPayload.action === 'register') {
+            const avatar = `http://gravatar.com/avatar/${md5(
+              authUserData.email
+            )}?d=identicon`
+            user = { email: authUserData.email, avatar }
+            await db
+              .collection('users')
+              .doc(userPayload.email)
+              .set(user)
+          } else {
+            const loginRef = db.collection('users').doc(userPayload.email)
+            console.log('loginRef:', loginRef)
+            const loggedInUser = await loginRef.get()
+            console.log('loggedInUser:', loggedInUser)
+            user = loggedInUser.data()
+          }
           commit('SET_USER', user)
           commit('SET_TOKEN', authUserData.idToken)
           commit('SET_LOADING', false)
+          saveUserData(authUserData, user)
         } catch (error) {
           console.error(error)
           commit('SET_LOADING', false)
         }
+      },
+      setLogoutTimer({ dispatch }, interval) {
+        setTimeout(() => dispatch('logoutUser'), interval)
+      },
+      logoutUser({ commit }) {
+        commit('CLEAR_TOKEN')
+        commit('CLEAR_USER')
+        clearUserData()
       },
     },
     getters: {

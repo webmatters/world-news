@@ -1,5 +1,8 @@
 export default {
   mode: 'spa',
+  router: {
+    middleware: 'check-auth',
+  },
   /*
    ** Headers of the page
    */
@@ -43,7 +46,11 @@ export default {
   /*
    ** Plugins to load before mounting the App
    */
-  plugins: [{ src: '~/plugins/vue-material' }, { src: '~/plugins/axios' }],
+  plugins: [
+    { src: '~/plugins/vue-material' },
+    { src: '~/plugins/axios' },
+    { src: '~/plugins/firestore' },
+  ],
   /*
    ** Nuxt.js dev-modules
    */
@@ -73,6 +80,11 @@ export default {
       target:
         'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBkDzz3ir6s2RyWjxSzoz_uiEHm-q2f63k',
       pathRewrite: { '^/register/': '' },
+    },
+    '/login/': {
+      target:
+        'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBkDzz3ir6s2RyWjxSzoz_uiEHm-q2f63k',
+      pathRewrite: { '^/login/': '' },
     },
   },
   env: {

@@ -2,7 +2,10 @@
   <div class="md-layout md-alignment-center">
     <!-- Navigation -->
     <md-toolbar elevation="1" class="fixed-toolbar">
-      <md-button @click="showLeftPanel=true" class="md-icon-button"><md-icon>menu</md-icon></md-button>
+      <md-button
+        @click="showLeftPanel=true" class="md-icon-button">
+        <md-icon>menu</md-icon>
+      </md-button>
       <nuxt-link class="md-primary md-title" to="/" style="text-decoration: none;">World News</nuxt-link>
       <div class="md-toolbar-section-end">
         <template v-if="isAuthenticated">
@@ -10,7 +13,7 @@
             <md-avatar><img :src="user.avatar" :alt="user.email"></md-avatar>
             {{ user.email }}
           </md-button>
-          <md-button>Logout</md-button>
+          <md-button @click="logoutUser" >Logout</md-button>
         </template>
         <template v-else>
           <md-button to="/login">Login</md-button>
@@ -55,8 +58,11 @@
     <!-- App Content -->
     <div class="md-layout-item md-size-95" style="margin-top: 4em;">
       <md-content class="md-layout md-gutter" style="background-color: #007998; padding: 1em;">
-        <div v-for="headline in headlines" :key="headline.id"
-          class="md-layout-item md-xsmall-size-100 md-small-size-50 md-medium-size-33 md-large-size-25 md-xlarge-size-25">
+        <div
+          v-for="headline in headlines"
+          :key="headline.id"
+          class="md-layout-item md-xsmall-size-100 md-small-size-50 md-medium-size-33 md-large-size-25 md-xlarge-size-25"
+        >
           <md-card style="margin-top: 1em;" md-with-hover>
             <md-ripple>
             <md-card-media md-ratio="16:9">
@@ -114,11 +120,13 @@
       }
     },
     async fetch({ store }) {
-      await store.dispatch('loadHeadlines', `/api/top-headlines?country=${store.state.country}&category=${store.state.category}`)
+      await store.dispatch('loadHeadlines',
+      `/api/top-headlines?country=${store.state.country}&category=${store.state.category}`)
     },
     watch: {
       async country() {
-        await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=${this.country}&category=${this.category}`)
+        await this.$store.dispatch('loadHeadlines',
+        `/api/top-headlines?country=${this.country}&category=${this.category}`)
       }
     },
     computed: {
@@ -144,10 +152,14 @@
     methods: {
       async loadCategory(category) {
         this.$store.dispatch('changeCategory', category)
-        await this.$store.dispatch('loadHeadlines', `/api/top-headlines?country=${this.country}&category=${this.category}`)
+        await this.$store.dispatch('loadHeadlines',
+        `/api/top-headlines?country=${this.country}&category=${this.category}`)
       },
       changeCountry(country) {
         this.$store.dispatch('changeCountry', country)
+      },
+      logoutUser() {
+        this.$store.dispatch('logoutUser')
       }
     },
   }
