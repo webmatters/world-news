@@ -8,6 +8,7 @@ const createStore = () => {
   return new Vuex.Store({
     state: {
       headlines: [],
+      feed: [],
       category: '',
       loading: false,
       country: 'us',
@@ -38,6 +39,12 @@ const createStore = () => {
       },
       CLEAR_USER(state) {
         state.user = null
+      },
+      SET_FEED(state, headlines) {
+        state.feed = headlines
+      },
+      CLEAR_FEED(state) {
+        state.feed = []
       },
     },
     actions: {
@@ -96,7 +103,38 @@ const createStore = () => {
       logoutUser({ commit }) {
         commit('CLEAR_TOKEN')
         commit('CLEAR_USER')
+        commit('CLEAR_FEED')
         clearUserData()
+      },
+      async addHeadlineToFeed({ commit, state }, headline) {
+        const feedRef = db
+          .collection(`users/${state.user.email}/feed`)
+          .doc(headline.title)
+        await feedRef.set(headline)
+      },
+      async loadUserFeed({ state, commit }) {
+        if (state.user) {
+          const feedRef = db.collection(`users/${state.user.email}/feed`)
+
+          await feedRef.onSnapshot(querySnapshot => {
+            let headlines = []
+            querySnapshot.forEach(doc => {
+              headlines.push(doc.data())
+              commit('SET_FEED', headlines)
+            })
+            if (querySnapshot.empty) {
+              headlines = []
+              commit('SET_FEED', headlines)
+            }
+          })
+        }
+      },
+      async removeHeadlineFromFeed({ state }, headline) {
+        const headlineRef = db
+          .collection(`users/${state.user.email}/feed`)
+          .doc(headline.title)
+
+        await headlineRef.delete()
       },
     },
     getters: {
@@ -106,6 +144,7 @@ const createStore = () => {
       country: state => state.country,
       isAuthenticated: state => !!state.token,
       user: state => state.user,
+      feed: state => state.feed,
     },
   })
 }
