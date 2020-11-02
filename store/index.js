@@ -1,5 +1,6 @@
 import Vuex from 'vuex'
 import md5 from 'md5'
+import slugify from 'slugify'
 
 import db from '~/plugins/firestore'
 import { saveUserData, clearUserData } from '~/utils'
@@ -14,6 +15,7 @@ const createStore = () => {
       country: 'us',
       token: '',
       user: null,
+      headline: null,
     },
     mutations: {
       SET_HEADLINES(state, headlines) {
@@ -46,13 +48,25 @@ const createStore = () => {
       CLEAR_FEED(state) {
         state.feed = []
       },
+      SET_HEADLINE(state, headline) {
+        state.headline = headline
+      },
     },
     actions: {
       async loadHeadlines({ commit }, apiUrl) {
         commit('SET_LOADING', true)
         const { articles } = await this.$axios.$get(apiUrl)
+        const headlines = articles.map(article => {
+          const slug = slugify(article.title, {
+            replacement: '-',
+            remove: /[^a-zA-Z0-9 -]/g,
+            lower: true,
+          })
+          const headline = { ...article, slug }
+          return headline
+        })
         commit('SET_LOADING', false)
-        commit('SET_HEADLINES', articles)
+        commit('SET_HEADLINES', headlines)
       },
       changeCategory({ commit }, category) {
         commit('SET_CATEGORY', category)
@@ -136,6 +150,28 @@ const createStore = () => {
 
         await headlineRef.delete()
       },
+      async saveHeadline(context, headline) {
+        const headlineRef = db.collection('headlines').doc(headline.slug)
+        let headlineId
+        await headlineRef.get().then(doc => {
+          if (doc.exists) {
+            headlineId = doc.id
+          }
+        })
+
+        if (!headlineId) {
+          await headlineRef.set(headline)
+        }
+      },
+      async loadHeadline({ commit }, headlineSlug) {
+        const headlineRef = db.collection('headlines').doc(headlineSlug)
+        await headlineRef.get().then(doc => {
+          if (doc.exists) {
+            const headline = doc.data()
+            commit('SET_HEADLINE', headline)
+          }
+        })
+      },
     },
     getters: {
       headlines: state => state.headlines,
@@ -145,6 +181,7 @@ const createStore = () => {
       isAuthenticated: state => !!state.token,
       user: state => state.user,
       feed: state => state.feed,
+      headline: state => state.headline,
     },
   })
 }
