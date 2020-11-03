@@ -16,6 +16,7 @@ const createStore = () => {
       token: '',
       user: null,
       headline: null,
+      source: '',
     },
     mutations: {
       SET_HEADLINES(state, headlines) {
@@ -50,6 +51,9 @@ const createStore = () => {
       },
       SET_HEADLINE(state, headline) {
         state.headline = headline
+      },
+      SET_SOURCE(state, source) {
+        state.source = source
       },
     },
     actions: {
@@ -165,11 +169,77 @@ const createStore = () => {
       },
       async loadHeadline({ commit }, headlineSlug) {
         const headlineRef = db.collection('headlines').doc(headlineSlug)
-        await headlineRef.get().then(doc => {
+        const commentsRef = db
+          .collection(`headlines/${headlineSlug}/comments`)
+          .orderBy('likes', 'desc')
+
+        let loadedHeadline = {}
+        await headlineRef.get().then(async doc => {
           if (doc.exists) {
-            const headline = doc.data()
-            commit('SET_HEADLINE', headline)
+            loadedHeadline = doc.data()
+            await commentsRef.get().then(querySnapshot => {
+              if (querySnapshot.empty) {
+                commit('SET_HEADLINE', loadedHeadline)
+              }
+              let loadedComments = []
+              querySnapshot.forEach(doc => {
+                loadedComments.push(doc.data())
+                loadedHeadline['comments'] = loadedComments
+                commit('SET_HEADLINE', loadedHeadline)
+              })
+            })
           }
+        })
+      },
+      async sendComment({ state, commit }, comment) {
+        const commentsRef = db.collection(
+          `headlines/${state.headline.slug}/comments`
+        )
+        commit('SET_LOADING', true)
+        await commentsRef.doc(comment.id).set(comment)
+        await commentsRef
+          .orderBy('likes', 'desc')
+          .get()
+          .then(querySnapshot => {
+            let comments = []
+            querySnapshot.forEach(doc => {
+              comments.push(doc.data())
+              const updatedHeadline = { ...state.headline, comments }
+              commit('SET_HEADLINE', updatedHeadline)
+            })
+          })
+        commit('SET_LOADING', false)
+      },
+      async likeComment({ state, commit }, commentId) {
+        const commentsRef = db
+          .collection(`headlines/${state.headline.slug}/comments`)
+          .orderBy('likes', 'desc')
+
+        const likedCommentRef = db
+          .collection('headlines')
+          .doc(state.headline.slug)
+          .collection('comments')
+          .doc(commentId)
+
+        await likedCommentRef.get().then(doc => {
+          if (doc.exists) {
+            const prevLikes = doc.data().likes
+            const currentLikes = prevLikes + 1
+            likedCommentRef.update({
+              likes: currentLikes,
+            })
+          }
+        })
+        await commentsRef.onSnapshot(querySnapshot => {
+          let loadedComments = []
+          querySnapshot.forEach(doc => {
+            loadedComments.push(doc.data())
+            const updatedHeadline = {
+              ...state.headline,
+              comments: loadedComments,
+            }
+            commit('SET_HEADLINE', updatedHeadline)
+          })
         })
       },
     },
@@ -182,6 +252,7 @@ const createStore = () => {
       user: state => state.user,
       feed: state => state.feed,
       headline: state => state.headline,
+      source: state => state.source,
     },
   })
 }

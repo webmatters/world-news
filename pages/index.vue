@@ -19,9 +19,39 @@
           <md-button to="/login">Login</md-button>
           <md-button to="/register">Register</md-button>
         </template>
+        <md-button @click="showSearchDialog=true" class="md-primary">Search</md-button>
         <md-button @click="showRightPanel=true" class="md-accent">Categories</md-button>
       </div>
     </md-toolbar>
+
+    <!-- Search Dialog -->
+    <md-dialog :md-active.sync="showSearchDialog">
+      <md-dialog-title>Search Headlines</md-dialog-title>
+      <div class="md-layout" style="padding: 1em;">
+        <md-field>
+          <label>Search Term(s)</label>
+          <md-input 
+            v-model="query"
+            placeholder="Use quotes for exact matches, AND/OR/NOT for multiple terms."
+            maxLength="30"
+          >
+          </md-input>
+        </md-field>
+        <md-field>
+          <label for="sortBy">Sort search results (optional)</label>
+          <md-select v-model="sortBy" name="sortBy" id="sortBy" md-dense>
+            <md-option value="publishedAt">Newest (default)</md-option>
+            <md-option value="relevancy">Relevant</md-option>
+            <md-option value="popularity">Popular</md-option>
+          </md-select>
+        </md-field>
+      </div>
+
+      <md-dialog-actions>
+        <md-button @click="showSearchDialog=false" class="md-accent">Cancel</md-button>
+        <md-button @click="searchHeadlines" class="md-primary">Search</md-button>
+      </md-dialog-actions>
+    </md-dialog>
 
     <!-- News Categories (Right drawer) -->
     <md-drawer class="md-right" md-fixed :md-active.sync="showRightPanel">
@@ -107,7 +137,7 @@
               <div class="md-title">
                 <a :href="headline.url" target="_blank">{{headline.title}}</a>
               </div>
-              <div>
+              <div @click="loadSource(headline.source.id)">
                 {{headline.source.name}}
                 <md-icon class="small-icon">book</md-icon>
               </div>
@@ -147,6 +177,7 @@
       return {
         showRightPanel: false,
         showLeftPanel: false,
+        showSearchDialog: false,
         newsCategories: [
           {name: 'Top Headlines', path: '', icon: 'today' },
           {name: 'Technology', path: 'technology', icon: 'keyboard' },
@@ -155,7 +186,9 @@
           {name: 'Health', path: 'health', icon: 'fastfood' },
           {name: 'Science', path: 'science', icon: 'fingerprint' },
           {name: 'Sports', path: 'sports', icon: 'golf_course' },
-        ]
+        ],
+        query: '',
+        sortBy: ''
       }
     },
     async fetch({ store }) {
@@ -191,6 +224,9 @@
       },
       feed() {
         return this.$store.getters.feed
+      },
+      source() {
+        return this.$store.getters.source
       }
     },
     methods: {
@@ -221,6 +257,16 @@
         await this.$store.dispatch('saveHeadline', headline).then(() => {
           this.$router.push(`/headlines/${headline.slug}`)
         })
+      },
+      async loadSource(sourceId) {
+        if(sourceId) {
+          this.$store.commit('SET_SOURCE', sourceId)
+          await this.$store.dispatch('loadHeadlines', `/api/top-headlines?sources=${this.source}`)
+        }
+      },
+      async searchHeadlines() {
+        await this.$store.dispatch('loadHeadlines', `/api/everything?q=${this.query}&sortBy=${this.sortBy}`)
+        this.showSearchDialog = false
       }
     },
   }
