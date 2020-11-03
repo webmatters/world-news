@@ -1,3 +1,5 @@
+if (process.env.NODE_ENV !== 'production') require('dotenv').config()
+
 export default {
   mode: 'spa',
   router: {
@@ -78,18 +80,16 @@ export default {
       pathRewrite: { '^/api/': '' },
     },
     '/register/': {
-      target:
-        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyBkDzz3ir6s2RyWjxSzoz_uiEHm-q2f63k',
+      target: `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.FIREBASE_KEY}`,
       pathRewrite: { '^/register/': '' },
     },
     '/login/': {
-      target:
-        'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBkDzz3ir6s2RyWjxSzoz_uiEHm-q2f63k',
+      target: `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_KEY}`,
       pathRewrite: { '^/login/': '' },
     },
   },
   env: {
-    NEWS_API_KEY: '337265c388cf4e4283183bdcc0e1faa1',
+    newsAPIKey: process.env.NEWS_API_KEY,
   },
   /*
    ** Build configuration
