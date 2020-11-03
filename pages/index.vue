@@ -110,7 +110,7 @@
           <div class="md-list-item-text">
             <span><a :href="headline.url" target="_blank">{{headline.title}}</a></span>
             <span>{{headline.source.name}}</span>
-            <md-button @click="saveHeadline(headline)" class="md-icon-button">
+            <md-button @click="saveHeadline(headline)" >
               <span>View Comments</span>
             </md-button>
           </div>
